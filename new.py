@@ -51,8 +51,8 @@ testX = numpy.reshape(testX, (testX.shape[0], 1, testX.shape[1]))
 
 #create and fit the LSTM network
 model = Sequential()
-model.add(LSTM(128, input_shape=(1, look_back), return_sequences = True))
-model.add(LSTM(layes[2], return_sequences=False))
+model.add(LSTM(12, input_shape=(1, look_back), return_sequences = True))
+model.add(LSTM(4, return_sequences=False))
 model.add(Dense(1))
 model.compile(loss='mean_squared_error', optimizer='adam')
 model.fit(trainX, trainY, epochs=100, batch_size=1, verbose=2)
