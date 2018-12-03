@@ -34,12 +34,13 @@ numpy.random.seed(7)
 #scaler = MinMaxScaler(feature_range=(0,1))
 #dataset = scaler.fit_transform(dataset)
 
+
 train_size = int(len(dataset) * 0.67)
 test_size = len(dataset) - train_size
 print(train_size, test_size)
 train, test = dataset[0:train_size, :], dataset[train_size:len(dataset),:]
 
-look_back = 15
+look_back = 3
 trainX, trainY = create_dataset(train, look_back)
 testX, testY = create_dataset(test, look_back)
 print(trainY.shape)
@@ -57,38 +58,39 @@ print(trainX.shape)
 
 #create and fit the LSTM network
 model = Sequential()
-model.add(LSTM(12, input_shape=(look_back, 4), return_sequences = True))
-model.add(LSTM(4, return_sequences=False))
+model.add(LSTM(4, input_shape=(look_back, 4), return_sequences = False))
+#model.add(LSTM(4, return_sequences=False))
 model.add(Dense(4))
 model.compile(loss='mean_squared_error', optimizer='adam')
 model.fit(trainX, trainY, epochs=100, batch_size=1, verbose=2)
 
+model.save("model.h5")
 trainPredict = model.predict(trainX)
 testPredict = model.predict(testX)
 
 #invert precictions
-trainPredict = scaler.inverse_transform(trainPredict)
-print(trainY.shape)
-trainY = scaler.inverse_transform(trainY)
-testPredict = scaler.inverse_transform(testPredict)
-testY = scaler.inverse_transform(testY)
+# trainPredict = scaler.inverse_transform(trainPredict)
+# print(trainY.shape)
+# trainY = scaler.inverse_transform(trainY)
+# testPredict = scaler.inverse_transform(testPredict)
+# testY = scaler.inverse_transform(testY)
 
-trainScore = math.sqrt(mean_squared_error(trainY[:, 0], trainPredict[:, 0]))
+trainScore = math.sqrt(mean_squared_error(trainY[:, :], trainPredict[:, :]))
 #print(trainY)
 #print(trainY[0])
 print('Train Score: %.2f RMSE' % (trainScore))
 testScore = math.sqrt(mean_squared_error(testY[:, 0], testPredict[:, 0]))
 print('Test Score: %.2f RMSE' % (testScore))
 
-trainPredictPlot = numpy.empty_like(dataset)
+trainPredictPlot = numpy.empty_like(dataset[:,0:2])
 trainPredictPlot[:, :] = numpy.nan
-trainPredictPlot[look_back:len(trainPredict) + look_back, :] = trainPredict
+trainPredictPlot[look_back:len(trainPredict) + look_back, :] = trainPredict[:,0:2]
 
-testPredictPlot = numpy.empty_like(dataset)
+testPredictPlot = numpy.empty_like(dataset[:,0:2])
 testPredictPlot[:, :] = numpy.nan
-testPredictPlot[len(trainPredict)+(look_back*2)+1:len(dataset)-1, :] = testPredict
+testPredictPlot[len(trainPredict)+(look_back*2)+1:len(dataset)-1, :] = testPredict[:,0:2]
 
-plt.plot(scaler.inverse_transform(dataset))
+plt.plot(dataset[:,0:2])
 plt.plot(trainPredictPlot)
 plt.plot(testPredictPlot)
 plt.show()
