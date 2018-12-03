@@ -8,52 +8,58 @@ from keras.layers import LSTM
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.metrics import mean_squared_error
 
-dataframe = read_csv("international-airline-passengers.csv", usecols=[1],engine='python', skipfooter=3)
+#dataframe = read_csv("international-airline-passengers.csv", usecols=[1],engine='python', skipfooter=3)
 #print(dataframe)
-dataset = dataframe.values
+#dataset = dataframe.values
 #print(dataset)
-dataset = dataset.astype('float32')
+#dataset = dataset.astype('float32')
 
-plt.plot(dataset)
-plt.show()
+dataset = numpy.loadtxt("groundtruth_rect.txt")
+print(dataset)
+#plt.plot(dataset)
+#plt.show()
 
 def create_dataset(dataset, look_back=1):
     dataX, dataY =[], []
     for i in range(len(dataset)-look_back-1):
-        a = dataset[i:(i+look_back), 0]
+        a = dataset[i:(i+look_back), :]
         dataX.append(a)
-        dataY.append([dataset[i+look_back, 0]])
+        dataY.append(dataset[i+look_back, :])
     return numpy.array(dataX), numpy.array(dataY)
 
 
 numpy.random.seed(7)
 
-scaler = MinMaxScaler(feature_range=(0,1))
-dataset = scaler.fit_transform(dataset)
+#对于检测框的变化不做归一化处理
+#scaler = MinMaxScaler(feature_range=(0,1))
+#dataset = scaler.fit_transform(dataset)
 
 train_size = int(len(dataset) * 0.67)
 test_size = len(dataset) - train_size
-
+print(train_size, test_size)
 train, test = dataset[0:train_size, :], dataset[train_size:len(dataset),:]
 
-look_back = 3
+look_back = 15
 trainX, trainY = create_dataset(train, look_back)
 testX, testY = create_dataset(test, look_back)
+print(trainY.shape)
+print('--------')
+#print(trainX)
 #print(trainY)
 #reshape input to be [samples, time steps, features]
 #print(trainX.shape[0], trainX.shape[1])
 #print(trainX)
-
-trainX = numpy.reshape(trainX, (trainX.shape[0], 1, trainX.shape[1]))
-testX = numpy.reshape(testX, (testX.shape[0], 1, testX.shape[1]))
-#print(trainX)
 #print(trainX.shape)
+trainX = numpy.reshape(trainX, (trainX.shape[0],  trainX.shape[1], trainX.shape[2]))
+testX = numpy.reshape(testX, (testX.shape[0], testX.shape[1], testX.shape[2]))
+#print(trainX)
+print(trainX.shape)
 
 #create and fit the LSTM network
 model = Sequential()
-model.add(LSTM(12, input_shape=(1, look_back), return_sequences = True))
+model.add(LSTM(12, input_shape=(look_back, 4), return_sequences = True))
 model.add(LSTM(4, return_sequences=False))
-model.add(Dense(1))
+model.add(Dense(4))
 model.compile(loss='mean_squared_error', optimizer='adam')
 model.fit(trainX, trainY, epochs=100, batch_size=1, verbose=2)
 
